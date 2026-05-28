@@ -1,0 +1,375 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Memory Game</title>
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background-color: #f4f7f6;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        min-height: 100vh;
+        color: #333;
+        padding: 40px 20px;
+      }
+
+      h1 {
+        margin-bottom: 25px;
+        color: #2c3e50;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+      }
+
+      .stuff {
+        display: flex;
+        width: 100%;
+        max-width: 600px;
+        justify-content: space-around;
+        align-items: center;
+        background: white;
+        padding: 15px 25px;
+        border-radius: 12px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+        margin-bottom: 30px;
+      }
+
+      .stuff div {
+        display: flex;
+        align-items: center;
+      }
+
+      .stuff p {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #555;
+      }
+
+      .stuff span {
+        color: #4caf50;
+        font-weight: bold;
+        margin-left: 5px;
+      }
+
+      button {
+        background-color: #4caf50;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        font-size: 1rem;
+        font-weight: bold;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 6px rgba(76, 175, 80, 0.3);
+      }
+
+      button:hover {
+        background-color: #45a049;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 12px rgba(76, 175, 80, 0.4);
+      }
+
+      button:active {
+        transform: translateY(0);
+      }
+
+      .box {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 15px;
+        perspective: 1000px; /* Required for the 3D flip */
+      }
+
+      .card {
+        width: 100px;
+        height: 100px;
+        cursor: pointer;
+        position: relative;
+        transform-style: preserve-3d;
+        transition: transform 0.6s cubic-bezier(0.4, 0.2, 0.2, 1);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        border-radius: 10px;
+      }
+
+      .card:hover {
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+      }
+
+      .card.active {
+        transform: rotateY(180deg);
+      }
+
+      .back,
+      .front {
+        width: 100%;
+        height: 100%;
+        position: absolute;
+        top: 0;
+        left: 0;
+        border-radius: 10px;
+        backface-visibility: hidden;
+      }
+
+      .front {
+        background: linear-gradient(135deg, #6e8efb, #a777e3);
+      }
+
+      .back {
+        transform: rotateY(180deg);
+        background-color: white;
+      }
+
+      .back img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        border-radius: 10px;
+      }
+
+      .showMessageBox {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 20px;
+        font-size: 1.2rem;
+        font-weight: bold;
+        color: #2c3e50;
+        text-align: center;
+        margin-top: 20px;
+        max-width: 500px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Memory game</h1>
+
+    <div class="stuff">
+      <div class="start">
+        <button>Start</button>
+      </div>
+      <div class="timer">
+        <p>Time:<span> 00:00</span></p>
+      </div>
+      <div class="count">
+        <p>Count: <span>0</span></p>
+      </div>
+      <div class="score">
+        <p>Score: <span>0</span></p>
+      </div>
+    </div>
+
+    <div class="showMessageBox"></div>
+    <div class="box"></div>
+
+    <script>
+      //=======================
+      // Game state variables
+      //=======================
+      let firstPick = null; //false
+      let secondPick = null;
+      let count = 0;
+      let score = 0;
+      let minutes = 0;
+      let seconds = 0;
+      let intervalId = null;
+      let isBoardLocked = true;
+
+      //==========================
+      // DOM Elements
+      //==========================
+      const startBtn = document.querySelector(".start button");
+      const timer = document.querySelector(".timer span");
+      const countSpan = document.querySelector(".count span");
+      const scoreSpan = document.querySelector(".score span");
+      const box = document.querySelector(".box");
+      const showMessageBox = document.querySelector(".showMessageBox");
+
+      const matchSound = new Audio("match.wav"); // Ensure you place a "match.mp3" file in your project folder
+      const mismatchSound = new Audio("fahhhhh.mp3");
+      const winSound = new Audio("win.wav");
+
+      const images = [
+        "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTGHsc-BVXySx76xdfcSO473Gv-PMhpVq6NIA&s",
+        "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQcE8IvSYu0r_XcK5S74Sw0gfmhiX4R7maeHA&s",
+        "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQOD9DlOp2T_59YDzZTCYXji26WqqOJzOmmjQ&s",
+        "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ9a7-yNuUffSg-I4kIUeBwEHyxEeS_WoUOnw&s",
+        "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSXlu2tFCUpZUTNOqvqhBd7OMhdbQgZ0jwIGg&s",
+        "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTpRBkedbFVz8kXWTNPV3woLNGNoukHmct-xw&s",
+      ];
+
+      const totalImages = [...images, ...images]; //spread operator==> copy လုပ်ပေး or သွားပေါင်းပေး
+
+      console.log("Before Shuffle");
+      console.log(totalImages);
+
+      shuffleImage(totalImages);
+      console.log("After Shuffle");
+      console.log(totalImages);
+
+      function shuffleImage(arr) {
+        for (let i = arr.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [arr[i], arr[j]] = [arr[j], arr[i]];
+        }
+      }
+
+      function showGameBox() {
+        totalImages.forEach((img) => {
+          const card = document.createElement("div");
+          card.classList.add("card");
+
+          const front = document.createElement("div");
+          front.classList.add("front");
+
+          const back = document.createElement("div");
+          back.classList.add("back");
+
+          const image = document.createElement("img");
+          image.src = img;
+
+          box.appendChild(card);
+          card.appendChild(front);
+          card.appendChild(back);
+          back.appendChild(image);
+
+          card.addEventListener("click", startGame); //()မပါတာ click လုပ်မှသွားခေါ်မှာဖြစ်တဲ့အတွက်
+        });
+      }
+
+      function startGame() {
+        if (isBoardLocked || this.classList.contains("active")) return; //1. this.classList.contains("active") ==> လှန်နေပြီးသားပုံတွေကို ပြန်ပိတ်လိုမရအောင်
+        this.classList.toggle("active"); //toggle ကရှိရင်ဖြုတ် မရှိရင်ထည့်// this ==> card
+
+        if (!firstPick) {
+          //firstPick = true //null ကို true ပြောင်း //true ဖြစ်မှ firstPick ထဲဝင် //ture ဖြစ်နေတော့နောက်တစ်ခုကို ထပ်နှိပ်ရင် false အဲ့တော့ if အလုပ်မလုပ်  second pick ထဲဝင်သွားမယ်
+          firstPick = this; //နှိပ်လိုက်တဲ့ card က firstPickထဲဝင်သွား
+          return;
+        }
+        console.log("firstPick", firstPick);
+
+        count++;
+        countSpan.textContent = count;
+
+        secondPick = this;
+        console.log("secondPick", secondPick);
+
+        if (
+          firstPick.querySelector(".back img").src ===
+          secondPick.querySelector(".back img").src
+        ) {
+          matchSound.play();
+          score++;
+          scoreSpan.textContent = score;
+          if (score === 6) {
+            winSound.play();
+            clearInterval(intervalId);
+            let message = "";
+            const time = `${minutes} : ${seconds < 10 ? "0" + seconds : seconds}`;
+
+            if (count < 7) {
+              message = `🎉 Impossible mode! I bet you can’t do better, can you? If you can, you're a memory master! Only ${count} tries and your time was ${time}!`;
+            } else if (count < 10) {
+              message = `😎 Not bad! You remembered most of them! Tries: ${count}, Time: ${time}.`;
+            } else {
+              message = `🤔 Oops! Looks like you need more memory training. Tries: ${count}, Time: ${time}.`;
+            }
+
+            setTimeout(() => {
+              const showMessage = document.createElement("div");
+              showMessage.textContent = message;
+              showMessageBox.appendChild(showMessage);
+              box.style.display = "none";
+              const resetBtn = document.createElement("button");
+              resetBtn.textContent = "RESET";
+              resetBtn.addEventListener("click", () => {
+                intervalId = null;
+                count = 0;
+                score = 0;
+                minutes = 0;
+                seconds = 0;
+                firstPick = null;
+                secondPick = null;
+                timer.textContent = " 00:00";
+                countSpan.textContent = "0";
+                scoreSpan.textContent = "0";
+                showMessageBox.innerHTML = "";
+                box.style.display = "grid";
+                startBtn.textContent = "Start";
+                startBtn.style.backgroundColor = "";
+                box.innerHTML = "";
+                shuffleImage(totalImages);
+                showGameBox();
+              });
+              showMessageBox.appendChild(resetBtn);
+            }, 500);
+          }
+
+          firstPick = null;
+          secondPick = null;
+        } else {
+          mismatchSound.play();
+          isBoardLocked = true; //ပုံနှစ်ပုံမညီတာသွားစစ်နေစဉ်အတွင်း ကျန်တာတွေကိုနှိပ်လိုမရအောင်ပိတ်ထားမယ်
+          setTimeout(() => {
+            firstPick.classList.remove("active");
+            secondPick.classList.remove("active");
+            firstPick = null;
+            secondPick = null;
+            isBoardLocked = false;
+          }, 1000);
+        }
+      }
+
+      function startTimer() {
+        if (!intervalId) {
+          intervalId = setInterval(() => {
+            seconds++;
+            if (seconds === 60) {
+              minutes++;
+              seconds = 0;
+            }
+
+            timer.textContent = `${minutes < 10 ? "0" + minutes : minutes} : ${seconds < 10 ? "0" + seconds : seconds}`;
+          }, 1000);
+        }
+      }
+
+      function previewCard() {
+        const cards = document.querySelectorAll(".card");
+        cards.forEach((card) => card.classList.add("active"));
+
+        setTimeout(() => {
+          cards.forEach((card) => card.classList.remove("active"));
+          isBoardLocked = false;
+        }, 1000);
+      }
+
+      startBtn.addEventListener("click", () => {
+        if (startBtn.textContent === "Start") {
+          startBtn.textContent = "Stop";
+          startBtn.style.backgroundColor = "#e74c3c"; // Turns red when in 'Stop' mode
+          isBoardLocked = false;
+          startTimer();
+          previewCard();
+        } else {
+          startBtn.textContent = "Start";
+          startBtn.style.backgroundColor = "";
+          isBoardLocked = true;
+          clearInterval(intervalId);
+          intervalId = null;
+        }
+      });
+
+      showGameBox();
+      startGame();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,80 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-family: Arial, sans-serif;
+  background-color: #1e1e2f;
+  color: white;
+  margin: 0;
+  padding: 40px;
+}
+
+/* NEW: Dashboard Styling */
+.control-panel {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+  background-color: #2a2a40;
+  padding: 15px 25px;
+  border-radius: 10px;
+  margin-bottom: 20px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+#start-btn {
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  font-size: 16px;
+  font-weight: bold;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+#start-btn:hover {
+  background-color: #45a049;
+}
+
+.stat {
+  font-size: 18px;
+  font-weight: bold;
+}
+
+/* Board and Card styling remains the same */
+.game-board {
+  display: grid;
+  grid-template-columns: repeat(4, 100px);
+  grid-gap: 15px;
+}
+
+.card {
+  width: 100px;
+  height: 100px;
+  background-color: #3a3a5a;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 50px;
+  cursor: pointer;
+  border-radius: 12px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  transition: transform 0.3s, background-color 0.3s;
+  user-select: none;
+}
+
+.card.flipped,
+.card.matched {
+  background-color: #ffffff;
+  transform: rotateY(180deg);
+}
+
+.card.matched {
+  background-color: #4CAF50;
+  pointer-events: none;
+}
