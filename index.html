@@ -13,20 +13,35 @@
 
       body {
         font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-        background-color: #f4f7f6;
+        background: linear-gradient(-45deg, #121212, #1a0b2e, #0b192c, #121212);
+        background-size: 400% 400%;
+        animation: gradientBG 15s ease infinite;
         display: flex;
         flex-direction: column;
         align-items: center;
         min-height: 100vh;
-        color: #333;
+        color: #e0e0e0;
         padding: 40px 20px;
+      }
+
+      @keyframes gradientBG {
+        0% {
+          background-position: 0% 50%;
+        }
+        50% {
+          background-position: 100% 50%;
+        }
+        100% {
+          background-position: 0% 50%;
+        }
       }
 
       h1 {
         margin-bottom: 25px;
-        color: #2c3e50;
+        color: #00e5ff;
         text-transform: uppercase;
         letter-spacing: 2px;
+        text-shadow: 0 0 10px rgba(0, 229, 255, 0.5);
       }
 
       .stuff {
@@ -35,10 +50,11 @@
         max-width: 600px;
         justify-content: space-around;
         align-items: center;
-        background: white;
+        background: #1e1e1e;
         padding: 15px 25px;
         border-radius: 12px;
-        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+        box-shadow: 0 4px 15px rgba(0, 229, 255, 0.1);
+        border: 1px solid #333;
         margin-bottom: 30px;
       }
 
@@ -50,18 +66,19 @@
       .stuff p {
         font-size: 1.1rem;
         font-weight: 600;
-        color: #555;
+        color: #aaa;
       }
 
       .stuff span {
-        color: #4caf50;
+        color: #b400ff;
         font-weight: bold;
         margin-left: 5px;
+        text-shadow: 0 0 5px rgba(180, 0, 255, 0.5);
       }
 
       button {
-        background-color: #4caf50;
-        color: white;
+        background-color: #00e5ff;
+        color: #000;
         border: none;
         padding: 10px 20px;
         font-size: 1rem;
@@ -69,13 +86,14 @@
         border-radius: 8px;
         cursor: pointer;
         transition: all 0.3s ease;
-        box-shadow: 0 4px 6px rgba(76, 175, 80, 0.3);
+        box-shadow: 0 4px 10px rgba(0, 229, 255, 0.4);
       }
 
       button:hover {
-        background-color: #45a049;
+        background-color: #b400ff;
+        color: #fff;
         transform: translateY(-2px);
-        box-shadow: 0 6px 12px rgba(76, 175, 80, 0.4);
+        box-shadow: 0 6px 15px rgba(180, 0, 255, 0.6);
       }
 
       button:active {
@@ -96,16 +114,36 @@
         position: relative;
         transform-style: preserve-3d;
         transition: transform 0.6s cubic-bezier(0.4, 0.2, 0.2, 1);
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
         border-radius: 10px;
       }
 
       .card:hover {
-        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+        box-shadow: 0 0 15px rgba(0, 229, 255, 0.4);
       }
 
       .card.active {
         transform: rotateY(180deg);
+      }
+
+      @keyframes shake {
+        0%,
+        100% {
+          transform: translateX(0) rotateY(180deg);
+        }
+        25% {
+          transform: translateX(-8px) rotateY(180deg);
+        }
+        50% {
+          transform: translateX(8px) rotateY(180deg);
+        }
+        75% {
+          transform: translateX(-8px) rotateY(180deg);
+        }
+      }
+
+      .card.mismatch {
+        animation: shake 0.4s ease-in-out;
       }
 
       .back,
@@ -120,12 +158,12 @@
       }
 
       .front {
-        background: linear-gradient(135deg, #6e8efb, #a777e3);
+        background: linear-gradient(135deg, #00e5ff, #b400ff);
       }
 
       .back {
         transform: rotateY(180deg);
-        background-color: white;
+        background-color: #1e1e1e;
       }
 
       .back img {
@@ -142,10 +180,19 @@
         gap: 20px;
         font-size: 1.2rem;
         font-weight: bold;
-        color: #2c3e50;
+        color: #00e5ff;
+        text-shadow: 0 0 5px rgba(0, 229, 255, 0.3);
         text-align: center;
         margin-top: 20px;
         max-width: 500px;
+      }
+
+      .message-box {
+        background-color: #1e1e1e;
+        padding: 20px 30px;
+        border-radius: 12px;
+        border: 1px solid #b400ff;
+        box-shadow: 0 4px 15px rgba(180, 0, 255, 0.3);
       }
     </style>
   </head>
@@ -157,7 +204,7 @@
         <button>Start</button>
       </div>
       <div class="timer">
-        <p>Time:<span> 00:00</span></p>
+        <p>Time:<span> 00:45</span></p>
       </div>
       <div class="count">
         <p>Count: <span>0</span></p>
@@ -178,8 +225,7 @@
       let secondPick = null;
       let count = 0;
       let score = 0;
-      let minutes = 0;
-      let seconds = 0;
+      let timeRemaining = 45; // Starts countdown for Time Attack Mode
       let intervalId = null;
       let isBoardLocked = true;
 
@@ -273,7 +319,11 @@
             winSound.play();
             clearInterval(intervalId);
             let message = "";
-            const time = `${minutes} : ${seconds < 10 ? "0" + seconds : seconds}`;
+
+            const timeTaken = 45 - timeRemaining;
+            const timeM = Math.floor(timeTaken / 60);
+            const timeS = timeTaken % 60;
+            const time = `${timeM < 10 ? "0" + timeM : timeM} : ${timeS < 10 ? "0" + timeS : timeS}`;
 
             if (count < 7) {
               message = `🎉 Impossible mode! I bet you can’t do better, can you? If you can, you're a memory master! Only ${count} tries and your time was ${time}!`;
@@ -285,30 +335,14 @@
 
             setTimeout(() => {
               const showMessage = document.createElement("div");
+              showMessage.classList.add("message-box");
               showMessage.textContent = message;
               showMessageBox.appendChild(showMessage);
               box.style.display = "none";
+              startBtn.style.display = "none";
               const resetBtn = document.createElement("button");
               resetBtn.textContent = "RESET";
-              resetBtn.addEventListener("click", () => {
-                intervalId = null;
-                count = 0;
-                score = 0;
-                minutes = 0;
-                seconds = 0;
-                firstPick = null;
-                secondPick = null;
-                timer.textContent = " 00:00";
-                countSpan.textContent = "0";
-                scoreSpan.textContent = "0";
-                showMessageBox.innerHTML = "";
-                box.style.display = "grid";
-                startBtn.textContent = "Start";
-                startBtn.style.backgroundColor = "";
-                box.innerHTML = "";
-                shuffleImage(totalImages);
-                showGameBox();
-              });
+              resetBtn.addEventListener("click", resetGame);
               showMessageBox.appendChild(resetBtn);
             }, 500);
           }
@@ -318,9 +352,11 @@
         } else {
           mismatchSound.play();
           isBoardLocked = true; //ပုံနှစ်ပုံမညီတာသွားစစ်နေစဉ်အတွင်း ကျန်တာတွေကိုနှိပ်လိုမရအောင်ပိတ်ထားမယ်
+          firstPick.classList.add("mismatch");
+          secondPick.classList.add("mismatch");
           setTimeout(() => {
-            firstPick.classList.remove("active");
-            secondPick.classList.remove("active");
+            firstPick.classList.remove("active", "mismatch");
+            secondPick.classList.remove("active", "mismatch");
             firstPick = null;
             secondPick = null;
             isBoardLocked = false;
@@ -328,16 +364,48 @@
         }
       }
 
+      function resetGame() {
+        intervalId = null;
+        count = 0;
+        score = 0;
+        timeRemaining = 45;
+        firstPick = null;
+        secondPick = null;
+        timer.textContent = " 00:45";
+        countSpan.textContent = "0";
+        scoreSpan.textContent = "0";
+        showMessageBox.innerHTML = "";
+        box.style.display = "grid";
+        box.style.visibility = "visible";
+        startBtn.style.display = "inline-block";
+        startBtn.textContent = "Start";
+        startBtn.style.backgroundColor = "";
+        box.innerHTML = "";
+        shuffleImage(totalImages);
+        showGameBox();
+      }
+
       function startTimer() {
         if (!intervalId) {
           intervalId = setInterval(() => {
-            seconds++;
-            if (seconds === 60) {
-              minutes++;
-              seconds = 0;
-            }
+            timeRemaining--;
+            let minutes = Math.floor(timeRemaining / 60);
+            let seconds = timeRemaining % 60;
 
-            timer.textContent = `${minutes < 10 ? "0" + minutes : minutes} : ${seconds < 10 ? "0" + seconds : seconds}`;
+            timer.textContent = ` ${minutes < 10 ? "0" + minutes : minutes} : ${seconds < 10 ? "0" + seconds : seconds}`;
+
+            if (timeRemaining <= 0) {
+              clearInterval(intervalId);
+              isBoardLocked = true;
+              box.style.display = "none";
+              startBtn.style.display = "none";
+              showMessageBox.innerHTML =
+                "<div class='message-box'>⏳ Time's Up! Game Over!</div>";
+              const resetBtn = document.createElement("button");
+              resetBtn.textContent = "TRY AGAIN";
+              resetBtn.addEventListener("click", resetGame);
+              showMessageBox.appendChild(resetBtn);
+            }
           }, 1000);
         }
       }
@@ -353,16 +421,23 @@
       }
 
       startBtn.addEventListener("click", () => {
-        if (startBtn.textContent === "Start") {
-          startBtn.textContent = "Stop";
-          startBtn.style.backgroundColor = "#e74c3c"; // Turns red when in 'Stop' mode
+        if (
+          startBtn.textContent === "Start" ||
+          startBtn.textContent === "Resume"
+        ) {
+          if (startBtn.textContent === "Start") {
+            previewCard();
+          }
+          startBtn.textContent = "Pause";
+          startBtn.style.backgroundColor = "#ff007f";
           isBoardLocked = false;
+          box.style.visibility = "visible"; // Ensure board is visible when playing
           startTimer();
-          previewCard();
         } else {
-          startBtn.textContent = "Start";
+          startBtn.textContent = "Resume";
           startBtn.style.backgroundColor = "";
           isBoardLocked = true;
+          box.style.visibility = "hidden"; // Anti-cheat: Hide the board while paused
           clearInterval(intervalId);
           intervalId = null;
         }
